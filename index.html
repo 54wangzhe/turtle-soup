@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学科知识海龟汤</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 顶部导航 -->
+    <header class="bg-white shadow-sm sticky top-0 z-40 transition-all duration-300">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <h1 class="text-xl font-bold text-blue-600">学科知识海龟汤</h1>
+            <div class="flex items-center gap-4">
+                <span id="userStatus" class="text-sm text-gray-600">游客模式</span>
+                <button id="loginBtn" class="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition">
+                    管理员登录
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="container mx-auto px-4 py-6 flex-grow">
+        <!-- 学科选择区 -->
+        <section id="subjectSelection" class="mb-8">
+            <h2 class="text-2xl font-bold mb-4">选择学科</h2>
+            <div id="subjectGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <!-- 学科卡片将通过JS动态生成 -->
+                <div class="animate-pulse h-24 bg-gray-200 rounded-lg"></div>
+                <div class="animate-pulse h-24 bg-gray-200 rounded-lg"></div>
+                <div class="animate-pulse h-24 bg-gray-200 rounded-lg"></div>
+                <div class="animate-pulse h-24 bg-gray-200 rounded-lg"></div>
+            </div>
+        </section>
+
+        <!-- 难度选择区（默认隐藏） -->
+        <section id="difficultySelection" class="mb-8 hidden">
+            <h2 class="text-2xl font-bold mb-4">选择难度</h2>
+            <div id="difficultyButtons" class="flex flex-wrap gap-3">
+                <button class="difficulty-btn px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition" data-difficulty="easy">简单</button>
+                <button class="difficulty-btn px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition" data-difficulty="medium">中等</button>
+                <button class="difficulty-btn px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition" data-difficulty="hard">困难</button>
+            </div>
+        </section>
+
+        <!-- 游戏区（默认隐藏） -->
+        <section id="gameArea" class="mb-8 hidden">
+            <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+                <h2 class="text-2xl font-bold mb-4">谜题</h2>
+                <p id="soupQuestion" class="text-gray-700 mb-4"></p>
+                <p class="text-sm text-gray-500"><i class="fa fa-clock-o mr-1"></i> 建议用时：<span id="soupTime"></span>分钟</p>
+            </div>
+
+            <!-- 聊天区域 -->
+            <div class="bg-white rounded-xl shadow-md p-4 mb-4">
+                <h3 class="font-bold mb-2">对话记录</h3>
+                <div id="chatHistory" class="h-64 overflow-y-auto mb-4 space-y-2"></div>
+                <div class="flex gap-2">
+                    <input type="text" id="userQuestion" placeholder="输入你的问题..." class="flex-grow px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button id="sendQuestion" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">发送</button>
+                </div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="flex gap-3">
+                <button id="guessAnswer" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">猜答案</button>
+                <button id="backToDifficulty" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition">重新选择难度</button>
+            </div>
+        </section>
+
+        <!-- 答案区（默认隐藏） -->
+        <section id="answerSection" class="mb-8 hidden">
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <h2 class="text-2xl font-bold mb-4">答案与解析</h2>
+                <div class="mb-4">
+                    <h3 class="font-bold text-lg mb-2">正确答案</h3>
+                    <p id="soupAnswer" class="text-gray-700"></p>
+                </div>
+                <div class="mb-4">
+                    <h3 class="font-bold text-lg mb-2">知识点解析</h3>
+                    <h4 id="knowledgeTitle" class="text-blue-600 mb-1"></h4>
+                    <p id="knowledgeContent" class="text-gray-700 mb-2"></p>
+                    <p class="text-sm text-gray-500"><i class="fa fa-book mr-1"></i> 关联教材：<span id="soupTextbook"></span></p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-2">相关问题</h3>
+                    <ul id="relatedQuestions" class="list-disc pl-5 text-gray-700"></ul>
+                </div>
+            </div>
+            <button id="playAgain" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">再玩一次</button>
+        </section>
+
+        <!-- 管理员面板（默认隐藏） -->
+        <section id="adminPanel" class="mb-8 hidden">
+            <h2 class="text-2xl font-bold mb-4">管理员中心</h2>
+            
+            <!-- 管理员标签页 -->
+            <div class="border-b border-gray-200 mb-4">
+                <button id="questionListTab" class="px-4 py-2 text-blue-600 border-b-2 border-blue-600 font-medium">题目管理</button>
+                <button id="subjectListTab" class="px-4 py-2 text-gray-500 hover:text-gray-700">科目管理</button>
+                <button id="addQuestionTab" class="px-4 py-2 text-gray-500 hover:text-gray-700">添加题目</button>
+            </div>
+
+            <!-- 题目列表（默认显示） -->
+            <div id="questionListContent">
+                <div class="flex mb-4">
+                    <input type="text" id="searchQuestions" placeholder="搜索题目..." class="flex-grow px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white rounded-xl shadow-md">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="py-3 px-4 text-left">谜题描述</th>
+                                <th class="py-3 px-4 text-left">学科</th>
+                                <th class="py-3 px-4 text-left">难度</th>
+                                <th class="py-3 px-4 text-left">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="questionsTableBody">
+                            <!-- 题目列表将通过JS动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 科目管理（默认隐藏） -->
+            <div id="subjectListContent" class="hidden">
+                <div class="bg-white rounded-xl shadow-md p-6 mb-4">
+                    <h3 class="font-bold text-lg mb-4">现有科目</h3>
+                    <div id="subjectList" class="space-y-3 mb-6">
+                        <!-- 科目列表将通过JS动态生成 -->
+                    </div>
+                    
+                    <h3 class="font-bold text-lg mb-2">添加新科目</h3>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input type="text" id="newSubjectName" placeholder="科目名称" class="flex-grow px-4 py-2 border border-gray-300 rounded-lg">
+                        <input type="color" id="newSubjectColor" value="#3b82f6" class="w-10 h-10 p-0 border border-gray-300 rounded-lg">
+                        <button id="addSubjectBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">添加</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 添加/编辑题目（默认隐藏） -->
+            <div id="addQuestionContent" class="hidden">
+                <form id="questionForm" class="bg-white rounded-xl shadow-md p-6">
+                    <input type="hidden" id="questionId">
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-1" for="questionSubject">学科</label>
+                        <select id="questionSubject" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <!-- 科目选项将通过JS动态生成 -->
+                        </select>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-1" for="questionDifficulty">难度</label>
+                        <select id="questionDifficulty" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="easy">简单</option>
+                            <option value="medium">中等</option>
+                            <option value="hard">困难</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-1" for="questionText">谜题描述</label>
+                        <textarea id="questionText" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="请输入谜题描述"></textarea>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-1" for="questionTime">建议用时（分钟）</label>
+                        <input type="number" id="questionTime" min="1" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="10">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-1" for="questionKeywords">关键词（用逗号分隔）</label>
+                        <input type="text" id="questionKeywords" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="关键词1, 关键词2, 关键词3">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-1" for="questionClues">线索（每行一条，至少3条）</label>
+                        <textarea id="questionClues" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="线索1&#10;线索2&#10;线索3"></textarea>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-1" for="questionAnswer">答案</label>
+                        <textarea id="questionAnswer" rows="2" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="请输入答案"></textarea>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-1" for="questionTextbook">关联教材</label>
+                        <input type="text" id="questionTextbook" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="例如：高中数学必修一">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-1" for="knowledgeTitle">知识点标题</label>
+                        <input type="text" id="knowledgeTitle" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="请输入知识点标题">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-1" for="knowledgeContent">知识点解析</label>
+                        <textarea id="knowledgeContent" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="请输入知识点解析"></textarea>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label class="block text-gray-700 mb-1" for="relatedQuestions">相关问题（每行一条，至少2条）</label>
+                        <textarea id="relatedQuestions" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="相关问题1&#10;相关问题2"></textarea>
+                    </div>
+                    
+                    <div class="flex gap-3">
+                        <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">保存</button>
+                        <button type="button" id="cancelQuestionBtn" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition">取消</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <!-- 管理员登录模态框（默认隐藏） -->
+    <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-md transform transition-all duration-300 scale-95 opacity-0" id="loginModalContent">
+            <h3 class="text-xl font-bold mb-4">管理员登录</h3>
+            <form id="adminLoginForm" class="mb-4">
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-1" for="adminPassword">管理员密码</label>
+                    <input type="password" id="adminPassword" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="请输入管理员密码">
+                    <p id="loginError" class="text-red-500 text-sm mt-1 hidden"></p>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">登录</button>
+            </form>
+            <button id="closeLoginModal" class="w-full text-gray-600 hover:text-gray-800 transition">取消</button>
+        </div>
+    </div>
+
+    <!-- 通知组件（默认隐藏） -->
+    <div id="notification" class="fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg transform translate-x-full transition-all duration-300 z-50"></div>
+
+    <!-- 猜答案模态框（默认隐藏） -->
+    <div id="guessModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-md transform transition-all duration-300 scale-95 opacity-0" id="guessModalContent">
+            <h3 class="text-xl font-bold mb-4">猜答案</h3>
+            <form id="guessForm" class="mb-4">
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-1" for="userGuess">请输入你的答案</label>
+                    <input type="text" id="userGuess" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="输入答案...">
+                </div>
+                <button type="submit" class="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">提交答案</button>
+            </form>
+            <button id="closeGuessModal" class="w-full text-gray-600 hover:text-gray-800 transition">取消</button>
+        </div>
+    </div>
+
+    <!-- 版权信息 -->
+    <div class="fixed bottom-4 right-4 bg-white bg-opacity-80 px-3 py-1 rounded text-sm shadow-md">
+        crazycba制作
+    </div>
+
+    <!-- 引入Firebase SDK -->
+    <script type="module">
+        // 动态导入Firebase模块以优化加载速度
+        import('./firebase.js').catch(err => console.error('Firebase模块加载失败:', err));
+        import('./app.js').catch(err => console.error('应用模块加载失败:', err));
+        import('./admin.js').catch(err => console.error('管理员模块加载失败:', err));
+        import('./question-handler.js').catch(err => console.error('问题处理模块加载失败:', err));
+    </script>
+</body>
+</html>
